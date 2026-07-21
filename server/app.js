@@ -5,6 +5,7 @@ const errorHandler = require('./middleware/errorHandler');
 
 // 导入路由
 const authRoutes = require('./routes/auth.routes');
+const messageRoutes = require('./routes/message.routes');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 
 // -------- 路由挂载 --------
 app.use('/api/auth', authRoutes);
+app.use('/api', messageRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {

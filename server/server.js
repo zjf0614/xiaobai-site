@@ -1,15 +1,16 @@
-// 服务器入口：创建 HTTP Server + 挂载 Express + 初始化 Socket.io
 const http = require('http');
 const app = require('./app');
 require('dotenv').config();
 
 const PORT = process.env.PORT || 3000;
 
-// 创建 HTTP 服务器
 const server = http.createServer(app);
 
-// 初始化 Socket.io（后续阶段会完善事件处理）
 const { Server } = require('socket.io');
+const { verifyToken } = require('./utils/jwt');
+const userModel = require('./models/user.model');
+const messageModel = require('./models/message.model');
+
 const io = new Server(server, {
   cors: {
     origin: ['http://localhost:5173', 'http://localhost:3000'],
@@ -17,19 +18,80 @@ const io = new Server(server, {
   }
 });
 
-// 将 io 实例挂载到 app 上，方便在控制器中使用
 app.set('io', io);
 
-// Socket.io 连接处理（骨架 —— 阶段 3 完善）
-io.on('connection', (socket) => {
-  console.log(`[Socket] 新连接: ${socket.id}`);
+const ONLINE_ROOM = 'public';
+const userSockets = new Map();
 
-  socket.on('disconnect', () => {
-    console.log(`[Socket] 断开连接: ${socket.id}`);
+io.on('connection', async (socket) => {
+  const token = socket.handshake.auth.token;
+  
+  if (!token) {
+    socket.disconnect();
+    return;
+  }
+
+  const decoded = verifyToken(token);
+  if (!decoded) {
+    socket.disconnect();
+    return;
+  }
+
+  const user = await userModel.findById(decoded.id);
+  if (!user) {
+    socket.disconnect();
+    return;
+  }
+
+  socket.data.user = user;
+  socket.userId = user.id;
+
+  if (!userSockets.has(user.id)) {
+    userSockets.set(user.id, new Set());
+    await userModel.setOnlineStatus(user.id, true);
+  }
+  userSockets.get(user.id).add(socket.id);
+
+  await socket.join(ONLINE_ROOM);
+
+  const onlineCount = io.sockets.adapter.rooms.get(ONLINE_ROOM)?.size || 0;
+  io.to(ONLINE_ROOM).emit('chat:onlineCount', onlineCount);
+
+  console.log(`[Socket] 用户 ${user.username} 已连接 (socket: ${socket.id})`);
+
+  socket.on('chat:message', async (data) => {
+    if (!data.content || data.content.trim().length === 0) {
+      return;
+    }
+
+    if (data.content.length > 2000) {
+      socket.emit('chat:error', { message: '消息内容过长' });
+      return;
+    }
+
+    const messageId = await messageModel.createMessage(user.id, data.content.trim());
+    const savedMessage = await messageModel.getMessageById(messageId);
+
+    io.to(ONLINE_ROOM).emit('chat:message', savedMessage);
+  });
+
+  socket.on('disconnect', async () => {
+    console.log(`[Socket] 用户 ${user.username} 已断开连接`);
+    
+    if (userSockets.has(user.id)) {
+      userSockets.get(user.id).delete(socket.id);
+      
+      if (userSockets.get(user.id).size === 0) {
+        userSockets.delete(user.id);
+        await userModel.setOnlineStatus(user.id, false);
+      }
+    }
+    
+    const onlineCount = io.sockets.adapter.rooms.get(ONLINE_ROOM)?.size || 0;
+    io.to(ONLINE_ROOM).emit('chat:onlineCount', onlineCount);
   });
 });
 
-// 启动服务器
 server.listen(PORT, () => {
   console.log(`🚀 服务器已启动: http://localhost:${PORT}`);
   console.log(`📡 Socket.io 已就绪`);
