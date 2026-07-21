@@ -10,6 +10,7 @@ const { Server } = require('socket.io');
 const { verifyToken } = require('./utils/jwt');
 const userModel = require('./models/user.model');
 const messageModel = require('./models/message.model');
+const privateMessageModel = require('./models/privateMessage.model');
 
 const io = new Server(server, {
   cors: {
@@ -18,10 +19,11 @@ const io = new Server(server, {
   }
 });
 
-app.set('io', io);
-
 const ONLINE_ROOM = 'public';
 const userSockets = new Map();
+
+app.set('io', io);
+app.set('userSockets', userSockets);
 
 io.on('connection', async (socket) => {
   const token = socket.handshake.auth.token;
@@ -73,6 +75,27 @@ io.on('connection', async (socket) => {
     const savedMessage = await messageModel.getMessageById(messageId);
 
     io.to(ONLINE_ROOM).emit('chat:message', savedMessage);
+  });
+
+  socket.on('dm:send', async (data) => {
+    if (!data.receiverId || !data.content || data.content.trim().length === 0) {
+      return;
+    }
+
+    if (data.content.length > 2000) {
+      socket.emit('dm:error', { message: '消息内容过长' });
+      return;
+    }
+
+    const message = await privateMessageModel.createMessage(user.id, data.receiverId, data.content.trim());
+
+    if (userSockets.has(data.receiverId)) {
+      userSockets.get(data.receiverId).forEach(socketId => {
+        io.to(socketId).emit('dm:message', message);
+      });
+    }
+
+    socket.emit('dm:message', message);
   });
 
   socket.on('disconnect', async () => {

@@ -49,11 +49,18 @@ export function SocketProvider({ children }) {
     }
   }, [socket, isConnected]);
 
+  const sendPrivateMessage = useCallback((receiverId, content) => {
+    if (socket && isConnected) {
+      socket.emit('dm:send', { receiverId, content });
+    }
+  }, [socket, isConnected]);
+
   const value = {
     socket,
     isConnected,
     onlineCount,
-    sendMessage
+    sendMessage,
+    sendPrivateMessage
   };
 
   return (
