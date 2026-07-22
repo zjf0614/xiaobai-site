@@ -26,3 +26,6 @@ npm-debug.log*
 
 # Uploads (user-uploaded files)
 server/uploads/
+
+# Database SQL files (local only)
+database/
