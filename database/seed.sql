@@ -10,10 +10,10 @@ USE xiaobai_site;
 -- 生产环境请立即修改密码！
 -- ============================================
 INSERT INTO users (username, email, password_hash, role) VALUES
-('admin', 'admin@xiaobai.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'admin'),
-('testuser', 'test@xiaobai.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'user'),
-('alice', 'alice@xiaobai.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'user'),
-('bob', 'bob@xiaobai.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'user');
+('admin', 'admin@xiaobai.com', '$2a$10$bybM62jgeNVNyPmX6pCHeuERcDN8T4P6yLZchTtkyYHFFi6JuExbC', 'admin'),
+('testuser', 'test@xiaobai.com', '$2a$10$bybM62jgeNVNyPmX6pCHeuERcDN8T4P6yLZchTtkyYHFFi6JuExbC', 'user'),
+('alice', 'alice@xiaobai.com', '$2a$10$bybM62jgeNVNyPmX6pCHeuERcDN8T4P6yLZchTtkyYHFFi6JuExbC', 'user'),
+('bob', 'bob@xiaobai.com', '$2a$10$bybM62jgeNVNyPmX6pCHeuERcDN8T4P6yLZchTtkyYHFFi6JuExbC', 'user');
 
 -- ============================================
 -- 示例公屏消息

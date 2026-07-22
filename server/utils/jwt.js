@@ -1,6 +1,7 @@
 // JWT 工具函数
+const path = require('path');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'xiaobai_site_jwt_secret_2024';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
