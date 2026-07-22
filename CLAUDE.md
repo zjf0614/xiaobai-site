@@ -4,7 +4,7 @@
 
 一个全栈实时聊天与 AI 助手网站，面向技术初学者设计。项目采用前后端分离架构，Monorepo 单仓库管理。
 
-**当前状态：阶段 1 完成** — 数据库 + 登录注册已实现。
+**当前状态：全部 8 阶段完成** — 所有功能模块已实现，可部署上线。
 
 ## 技术栈
 
@@ -18,6 +18,7 @@
 | 密码加密 | bcryptjs | 10 轮 salt |
 | CSS | 普通 CSS + CSS 变量 | 不用 Tailwind，不用 CSS-in-JS |
 | HTTP 客户端 | axios | 封装在 `client/src/api/client.js` |
+| 部署 | Nginx + PM2 | 静态服务 + 反向代理 + 进程守护 |
 
 ## 快速启动
 
@@ -33,6 +34,7 @@ mysql -u root -p xiaobai_site < database/schema.sql
 mysql -u root -p xiaobai_site < database/seed.sql
 
 # 4. 配置 server/.env（修改数据库密码和 JWT_SECRET）
+cp server/.env.example server/.env
 
 # 5. 启动开发服务器
 npm run dev
@@ -47,42 +49,70 @@ npm run dev
 ```
 小白网站/
 ├── CLAUDE.md                    ← 本文件（AI 开发指南）
+├── README.md                    ← 项目说明
+├── DEPLOY.md                    ← 部署指南
 ├── package.json                 ← 根脚本（concurrently 启动前后端）
+├── ecosystem.config.js          ← PM2 配置
 ├── .gitignore
 │
 ├── client/                      ← React 前端 (Vite)
-│   ├── vite.config.js           ← Vite 配置 + API 代理
+│   ├── vite.config.js           ← Vite 配置 + API 代理 + 构建优化
 │   ├── src/
 │   │   ├── main.jsx             ← 入口
-│   │   ├── App.jsx              ← 路由配置
-│   │   ├── index.css            ← 全局样式 + CSS 变量
+│   │   ├── App.jsx              ← 路由配置（9 个页面）
+│   │   ├── index.css            ← 全局样式 + CSS 变量（含侧边栏/聊天/搜索等）
 │   │   ├── api/client.js        ← axios 实例 + JWT 拦截器
-│   │   ├── contexts/            ← React Context (AuthContext 等)
+│   │   ├── contexts/            ← React Context
+│   │   │   ├── AuthContext.jsx  ← 认证状态
+│   │   │   └── SocketContext.jsx ← 实时通信状态
 │   │   ├── hooks/               ← 自定义 Hook (useAuth 等)
 │   │   ├── pages/               ← 页面组件
-│   │   │   └── admin/           ← 管理员页面（阶段 7）
+│   │   │   ├── LoginPage.jsx
+│   │   │   ├── RegisterPage.jsx
+│   │   │   ├── DashboardPage.jsx
+│   │   │   ├── ChatPage.jsx     ← 公屏聊天
+│   │   │   ├── FriendsPage.jsx  ← 好友 + 私信
+│   │   │   ├── AiPage.jsx       ← AI 助手
+│   │   │   ├── SearchPage.jsx   ← 内容搜索
+│   │   │   ├── ProfilePage.jsx
+│   │   │   └── AdminPage.jsx    ← 管理员后台
 │   │   ├── components/          ← 共享组件
-│   │   ├── services/            ← socket.io 客户端
+│   │   │   ├── Layout.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── AuthGuard.jsx
+│   │   │   └── LoadingSpinner.jsx
 │   │   └── utils/               ← 工具函数
 │
 ├── server/                      ← Express 后端
-│   ├── server.js                ← 入口（HTTP + Socket.io）
+│   ├── server.js                ← 入口（HTTP + Socket.io 全部事件处理）
 │   ├── app.js                   ← Express 应用配置
 │   ├── .env                     ← 环境变量（不提交 Git）
+│   ├── .env.example             ← 环境变量模板
 │   ├── config/db.js             ← MySQL 连接池
 │   ├── middleware/               ← 中间件
 │   │   ├── auth.js              ← JWT 认证
 │   │   ├── admin.js             ← 管理员权限检查
 │   │   └── errorHandler.js      ← 全局错误处理
-│   ├── routes/                  ← 路由定义（薄层，只定义路径）
-│   ├── controllers/             ← 控制器（业务逻辑）
-│   ├── models/                  ← 模型（数据库查询）
-│   ├── socket/                  ← Socket.io 事件处理
-│   └── utils/                   ← 工具（JWT、AI 模拟等）
+│   ├── routes/                  ← 路由定义（7 个模块）
+│   │   ├── auth.routes.js
+│   │   ├── message.routes.js
+│   │   ├── friend.routes.js
+│   │   ├── privateMessage.routes.js
+│   │   ├── ai.routes.js
+│   │   ├── search.routes.js
+│   │   └── admin.routes.js
+│   ├── controllers/             ← 控制器（7 个，一一对应 routes）
+│   ├── models/                  ← 模型（7 个，一一对应 controllers）
+│   └── utils/                   ← 工具（JWT 等）
 │
-└── database/
-    ├── schema.sql               ← 完整建表 DDL（8 张表）
-    └── seed.sql                 ← 种子数据
+├── database/
+│   ├── schema.sql               ← 完整建表 DDL（8 张表）
+│   └── seed.sql                 ← 种子数据
+│
+└── deploy/
+    ├── nginx.conf                ← Nginx 配置模板
+    └── deploy.sh                 ← 一键部署脚本
 ```
 
 ## 数据库表（8 张）
@@ -98,7 +128,7 @@ npm run dev
 | `search_history` | 搜索历史 | id, user_id(FK), query, result_count |
 | `admin_actions_log` | 管理员操作日志 | id, admin_id(FK), action, target_type, target_id, description |
 
-## 已实现的 API
+## 全部 API 端点
 
 ### 认证模块 `/api/auth`
 | 方法 | 路径 | 说明 | 认证 |
@@ -106,6 +136,78 @@ npm run dev
 | POST | `/api/auth/register` | 注册 | 否 |
 | POST | `/api/auth/login` | 登录 | 否 |
 | GET | `/api/auth/me` | 获取当前用户 | 是 |
+
+### 公屏消息 `/api`
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/messages?page=&limit=` | 获取历史消息（分页） | 是 |
+| DELETE | `/api/messages/:id` | 删除消息（管理员或本人） | 是 |
+
+### 私信 `/api`
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/private-messages/:userId?page=&limit=` | 获取与某用户的私信 | 是 |
+| GET | `/api/private-messages/unread/count` | 未读消息数 | 是 |
+| POST | `/api/private-messages/:userId/read` | 标记已读 | 是 |
+
+### 好友 `/api`
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/friends` | 好友列表 | 是 |
+| POST | `/api/friends/request/:userId` | 发送好友请求 | 是 |
+| PUT | `/api/friends/accept/:userId` | 接受好友请求 | 是 |
+| DELETE | `/api/friends/:userId` | 删除好友 | 是 |
+| GET | `/api/friends/requests/pending` | 待处理请求 | 是 |
+
+### AI 助手 `/api`
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/ai/conversations` | 对话列表 | 是 |
+| POST | `/api/ai/conversations` | 创建新对话 | 是 |
+| GET | `/api/ai/conversations/:id/messages` | 对话消息 | 是 |
+| POST | `/api/ai/chat` | 发送消息（模拟/AI回复） | 是 |
+| DELETE | `/api/ai/conversations/:id` | 删除对话 | 是 |
+
+### 搜索 `/api`
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/search?q=&type=all|users|messages` | 搜索 | 是 |
+| GET | `/api/search/history` | 搜索历史 | 是 |
+| DELETE | `/api/search/history` | 清除搜索历史 | 是 |
+
+### 管理员 `/api`
+| 方法 | 路径 | 说明 | 认证 |
+|------|------|------|------|
+| GET | `/api/admin/users?page=&limit=` | 用户列表 | 管理员 |
+| GET | `/api/admin/users/:id` | 用户详情 | 管理员 |
+| PUT | `/api/admin/users/:id` | 编辑用户 | 管理员 |
+| DELETE | `/api/admin/users/:id` | 删除用户 | 管理员 |
+| GET | `/api/admin/messages?page=&limit=` | 公屏消息列表 | 管理员 |
+| DELETE | `/api/admin/messages/:id` | 删除消息 | 管理员 |
+| GET | `/api/admin/logs?page=&limit=` | 操作日志 | 管理员 |
+| GET | `/api/admin/stats` | 仪表盘统计 | 管理员 |
+
+## Socket.io 事件
+
+### 公屏聊天
+| 事件 | 方向 | 说明 |
+|------|------|------|
+| `chat:message` | Client→Server | 发送公屏消息 |
+| `chat:message` | Server→Client | 广播新消息 |
+| `chat:onlineCount` | Server→Client | 在线人数 |
+
+### 私信
+| 事件 | 方向 | 说明 |
+|------|------|------|
+| `dm:send` | Client→Server | 发送私信 |
+| `dm:message` | Server→Client | 接收私信 |
+
+### AI 助手
+| 事件 | 方向 | 说明 |
+|------|------|------|
+| `ai:chat` | Client→Server | 发送 AI 对话 |
+| `ai:reply` | Server→Client | AI 回复 |
+| `ai:typing` | Client→Server/Server→Client | 输入状态 |
 
 ## 架构约定
 
@@ -115,11 +217,12 @@ npm run dev
 3. axios 拦截器自动在所有请求头附加 `Authorization: Bearer <token>`
 4. auth 中间件验证 token，将用户信息注入 `req.user`（含 id, username, role）
 5. 401 响应时拦截器自动清除 token 并跳转登录页
+6. Socket.io 连接时发送 token 进行认证
 
-### 状态管理（三个 Context）
+### 状态管理（两个 Context）
 - **AuthContext**: user, token, isAuthenticated, isLoading, login(), register(), logout()
-- **ChatContext**: （阶段 3 实现）消息列表、在线用户、socket 事件
-- **UIContext**: （后续实现）侧边栏、主题、Toast 通知
+- **SocketContext**: 在线用户列表、在线人数、socket 连接管理
+- 各页面自行管理本页数据（消息列表等），不通过全局 Context
 
 ### 后端模式
 - **Routes** → 只定义 HTTP 方法和路径，调用 controller
@@ -139,37 +242,25 @@ npm run dev
 - 前端 apiClient 拦截器统一处理 401
 - Controller 中用 try/catch 并通过 `next(err)` 传递给 errorHandler
 
-## 后续阶段
+### Socket.io 事件处理
+- 所有 socket 事件处理集中在 `server/server.js` 中
+- 用户-socket 映射存储在 `userSockets` Map（userId → Set<socketId>）
+- 在线状态变化时广播给所有在线用户
+- 消息长度限制 2000 字符
 
-### 阶段 2：布局 + 导航
-- 创建 Layout 组件（Navbar + Sidebar + Outlet）
-- 所有页面占位组件
-- 完善路由
+## 部署
 
-### 阶段 3：公屏聊天
-- Socket.io 服务端 JWT 认证
-- public:send / public:new_message 事件
-- PublicChatPage 完整 UI
+详见 [DEPLOY.md](DEPLOY.md)。
 
-### 阶段 4：私信 + 好友
-- 好友请求系统
-- 私信 Socket.io 事件
-- 在线状态 + 未读计数
+```bash
+# 构建前端
+npm run build    # → client/dist/
 
-### 阶段 5：AI 助手
-- AI 对话界面
-- simulateAI.js 模拟回复
-- 架构预留真实 API 接口
+# 生产启动
+pm2 start ecosystem.config.js
 
-### 阶段 6：搜索
-- 搜索 API + SearchPage
-
-### 阶段 7：管理员后台
-- AdminDashboard / AdminUsers / AdminMessages / AdminLogs
-
-### 阶段 8：部署
-- Nginx + PM2 配置
-- DEPLOY.md 部署指南
+# Nginx 配置见 deploy/nginx.conf
+```
 
 ## 环境变量
 
@@ -182,6 +273,10 @@ DB_PASSWORD=          # 你的 MySQL 密码
 DB_NAME=xiaobai_site
 JWT_SECRET=           # 随机字符串，用于签名 JWT
 JWT_EXPIRES_IN=7d
+USE_LLM=false         # 是否启用真实 AI（false=模拟回复）
+LLM_API_KEY=          # AI API Key（可选）
+LLM_API_URL=https://api.openai.com/v1/chat/completions
+LLM_MODEL=gpt-3.5-turbo
 ```
 
 **client/.env（可选）:**
