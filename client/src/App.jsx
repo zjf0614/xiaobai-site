@@ -11,6 +11,7 @@ import ChatPage from './pages/ChatPage';
 import AiPage from './pages/AiPage';
 import FriendsPage from './pages/FriendsPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
                 <Route path="/ai" element={<AiPage />} />
                 <Route path="/friends" element={<FriendsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/admin" element={<AdminPage />} />
               </Route>
             </Route>
 

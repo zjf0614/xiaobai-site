@@ -1,4 +1,6 @@
 import { NavLink } from 'react-router-dom';
+import { useContext } from 'react';
+import { AuthContext } from '../contexts/AuthContext';
 
 const navItems = [
   { path: '/', label: '首页', icon: '🏠' },
@@ -10,6 +12,9 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const { user } = useContext(AuthContext);
+  const isAdmin = user?.role === 'admin';
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -32,6 +37,19 @@ export default function Sidebar() {
             <span className="nav-label">{item.label}</span>
           </NavLink>
         ))}
+        
+        {isAdmin && (
+          <NavLink
+            key="/admin"
+            to="/admin"
+            className={({ isActive }) =>
+              `nav-item ${isActive ? 'nav-item-active' : ''} admin-nav-item`
+            }
+          >
+            <span className="nav-icon">⚙️</span>
+            <span className="nav-label">管理后台</span>
+          </NavLink>
+        )}
       </nav>
 
       <div className="sidebar-footer">

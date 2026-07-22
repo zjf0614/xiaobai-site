@@ -10,6 +10,7 @@ const friendRoutes = require('./routes/friend.routes');
 const privateMessageRoutes = require('./routes/privateMessage.routes');
 const aiRoutes = require('./routes/ai.routes');
 const searchRoutes = require('./routes/search.routes');
+const adminRoutes = require('./routes/admin.routes');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/api', friendRoutes);
 app.use('/api', privateMessageRoutes);
 app.use('/api', aiRoutes);
 app.use('/api', searchRoutes);
+app.use('/api', adminRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
