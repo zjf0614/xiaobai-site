@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import ChatPage from './pages/ChatPage';
+import AiPage from './pages/AiPage';
 import FriendsPage from './pages/FriendsPage';
 import ProfilePage from './pages/ProfilePage';
 
@@ -23,6 +24,7 @@ export default function App() {
               <Route element={<Layout />}>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/chat" element={<ChatPage />} />
+                <Route path="/ai" element={<AiPage />} />
                 <Route path="/friends" element={<FriendsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>

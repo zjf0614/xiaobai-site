@@ -11,6 +11,7 @@ const { verifyToken } = require('./utils/jwt');
 const userModel = require('./models/user.model');
 const messageModel = require('./models/message.model');
 const privateMessageModel = require('./models/privateMessage.model');
+const aiModel = require('./models/ai.model');
 
 const io = new Server(server, {
   cors: {
@@ -96,6 +97,33 @@ io.on('connection', async (socket) => {
     }
 
     socket.emit('dm:message', message);
+  });
+
+  socket.on('ai:chat', async (data) => {
+    if (!data.content || data.content.trim().length === 0) {
+      return;
+    }
+
+    if (data.content.length > 2000) {
+      socket.emit('ai:error', { message: '消息内容过长' });
+      return;
+    }
+
+    const useLLM = process.env.USE_LLM === 'true';
+    const aiReply = useLLM 
+      ? await aiModel.generateReplyWithLLM(data.content.trim(), user.id)
+      : await aiModel.generateReply(data.content.trim(), user.id);
+
+    await aiModel.saveChatHistory(user.id, data.content.trim(), aiReply);
+
+    socket.emit('ai:reply', {
+      reply: aiReply,
+      timestamp: new Date().toISOString()
+    });
+  });
+
+  socket.on('ai:typing', (data) => {
+    socket.emit('ai:typing', { isTyping: data.isTyping });
   });
 
   socket.on('disconnect', async () => {
