@@ -15,8 +15,12 @@ const adminRoutes = require('./routes/admin.routes');
 const app = express();
 
 // -------- 中间件 --------
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://your-domain.com', 'http://your-domain.com']
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true
 }));
 app.use(express.json());
