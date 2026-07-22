@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import SearchPage from './pages/SearchPage';
 import ChatPage from './pages/ChatPage';
 import AiPage from './pages/AiPage';
 import FriendsPage from './pages/FriendsPage';
@@ -23,6 +24,7 @@ export default function App() {
             <Route element={<AuthGuard />}>
               <Route element={<Layout />}>
                 <Route path="/" element={<DashboardPage />} />
+                <Route path="/search" element={<SearchPage />} />
                 <Route path="/chat" element={<ChatPage />} />
                 <Route path="/ai" element={<AiPage />} />
                 <Route path="/friends" element={<FriendsPage />} />

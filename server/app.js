@@ -9,6 +9,7 @@ const messageRoutes = require('./routes/message.routes');
 const friendRoutes = require('./routes/friend.routes');
 const privateMessageRoutes = require('./routes/privateMessage.routes');
 const aiRoutes = require('./routes/ai.routes');
+const searchRoutes = require('./routes/search.routes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api', messageRoutes);
 app.use('/api', friendRoutes);
 app.use('/api', privateMessageRoutes);
 app.use('/api', aiRoutes);
+app.use('/api', searchRoutes);
 
 // 健康检查
 app.get('/api/health', (req, res) => {
